@@ -32,6 +32,16 @@ class TaxCalculator(abc.ABC):
         def __json__(self):
             return self._ranges
 
+        def adjust_for_inflation(self, inflation_rate, years_in_future):
+            adjusted_rates = TaxCalculator.TaxRanges()
+            adjustment_coefficient = (1 + inflation_rate) ** years_in_future
+            for income_range, rate in self._ranges:
+                min_income, max_income = income_range
+                adjusted_rates.add_range(adjustment_coefficient * min_income,
+                                         adjustment_coefficient * max_income,
+                                         rate)
+            return adjusted_rates
+
         def add_range(self, min_income, max_income, rate):
             self._ranges.append(((min_income, max_income), rate))
             self._ranges = sorted(self._ranges, key=lambda x: x[0][0])  # Always sorted by min income in range
@@ -117,20 +127,25 @@ class TaxCalculator(abc.ABC):
                 loaded_data = json.load(file)
             print(loaded_data)
 
-    def get_tax_amount(self, income, year=None):
+    def get_rates_for_year(self, year=None):
         year = year or self.last_year
         if year in self._rates:
             rates = self._rates[year]
+        elif year > self.last_year:
+            ref_year = self.last_year
+            rates = self._rates[ref_year].adjust_for_inflation(inflation_rate=self._inflation,
+                                                               years_in_future=year-ref_year)
         else:
             raise NotImplemented
+        return rates
+
+    def get_tax_amount(self, income, year=None):
+        rates = self.get_rates_for_year(year)
         return rates.get_tax_amount(income)
 
     def get_pretax_for_aftertax(self, income, year=None):
-        year = year or self.last_year
-        if year in self._rates:
-            rates = self._rates[year]
-        else:
-            raise NotImplemented
+        rates = self.get_rates_for_year(year)
+
         # Iteratively converge to the answer
         pretax_income = collections.deque(maxlen=2)
         pretax_income.extend([0, income])

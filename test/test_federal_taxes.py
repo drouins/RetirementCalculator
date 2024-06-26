@@ -102,6 +102,19 @@ class TestFederalTaxes(unittest.TestCase):
         self.assertEqual(ft.get_pretax_for_aftertax(330000-85705.92, year=2023), 330000)
 
     @unittest.mock.patch('urllib.request.urlopen')
+    def test_given_valid_data_when_get_tax_amount_then_returns_valid_amount_inflation_adjusted(self, mock_urlopen):
+        mock_urlopen.return_value = self.valid_mock_response
+        # 2023 Federal taxes simulated with
+        # https://ca.icalculator.com/income-tax-calculator/2023.html
+        ft = taxes.FederalTaxes(cache_config=(1,), inflation=0.025)
+
+        self.assertEqual(ft.get_tax_amount(30000, year=2026), 4500)
+        self.assertEqual(ft.get_tax_amount(60000, year=2026), 9071.76)
+        self.assertEqual(ft.get_tax_amount(90000, year=2026), 15221.76)
+        self.assertEqual(ft.get_tax_amount(130000, year=2026), 24115.34)
+        self.assertEqual(ft.get_tax_amount(330000, year=2026), 83386.38)
+
+    @unittest.mock.patch('urllib.request.urlopen')
     def test_given_invalid_data_when_init_then_raises_value_error(self, mock_urlopen):
         mock_urlopen.return_value = self.invalid_mock_response
 
