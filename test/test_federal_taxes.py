@@ -28,16 +28,8 @@ import taxes
 
 
 class TestFederalTaxes(unittest.TestCase):
-    #def test_calculate_tax(self):
-    #    self.assertEqual(self.calculator.calculate_tax(100, 0.2), 20)
-    #    self.assertEqual(self.calculator.calculate_tax(200, 0.15), 30)
-    #    self.assertEqual(self.calculator.calculate_tax(0, 0.2), 0)
-
-    #def test_calculate_tax_with_zero_rate(self):
-    #    self.assertEqual(self.calculator.calculate_tax(100, 0), 0)
-
     @property
-    def valid_mock_data(self):
+    def valid_mock_response(self):
         # Mock data structure in Python dictionary format
         mock_data = {
             'properties': {
@@ -56,15 +48,21 @@ class TestFederalTaxes(unittest.TestCase):
                 }
             }
         }
-        return json.dumps(mock_data).encode('utf-8')
+        mock_response = unittest.mock.MagicMock()
+        mock_response.read.return_value = json.dumps(mock_data).encode('utf-8')
+        mock_response.__enter__.return_value = mock_response
+        return mock_response
+
+    @property
+    def invalid_mock_response(self):
+        mock_response = unittest.mock.MagicMock()
+        mock_response.read.return_value = b'some invalid json'
+        mock_response.__enter__.return_value = mock_response
+        return mock_response
 
     @unittest.mock.patch('urllib.request.urlopen')
     def test_given_valid_data_when_init_then_parses_correctly(self, mock_urlopen):
-        # Mock response object
-        mock_response = unittest.mock.MagicMock()
-        mock_response.read.return_value = self.valid_mock_data
-        mock_response.__enter__.return_value = mock_response
-        mock_urlopen.return_value = mock_response
+        mock_urlopen.return_value = self.valid_mock_response
 
         ft = taxes.FederalTaxes(cache_config=(1,))
         self.assertTrue(ft._rates)
@@ -72,12 +70,40 @@ class TestFederalTaxes(unittest.TestCase):
         self.assertIn(2024, ft._rates)
 
     @unittest.mock.patch('urllib.request.urlopen')
+    def test_given_valid_data_when_last_year_then_returns_last_year(self, mock_urlopen):
+        mock_urlopen.return_value = self.valid_mock_response
+        ft = taxes.FederalTaxes(cache_config=(1,))
+        self.assertEqual(ft.last_year, 2024)
+
+    @unittest.mock.patch('urllib.request.urlopen')
+    def test_given_valid_data_when_get_tax_amount_then_returns_valid_amount(self, mock_urlopen):
+        mock_urlopen.return_value = self.valid_mock_response
+        # 2023 Federal taxes simulated with
+        # https://ca.icalculator.com/income-tax-calculator/2023.html
+        ft = taxes.FederalTaxes(cache_config=(1,))
+
+        self.assertEqual(ft.get_tax_amount(30000, year=2023), 4500)
+        self.assertEqual(ft.get_tax_amount(60000, year=2023), 9365.25)
+        self.assertEqual(ft.get_tax_amount(90000, year=2023), 15515.25)
+        self.assertEqual(ft.get_tax_amount(130000, year=2023), 24995.82)
+        # Calculator returns 85930.69 with 29.33% instead of 29%
+        self.assertEqual(ft.get_tax_amount(330000, year=2023), 85705.92)
+
+    @unittest.mock.patch('urllib.request.urlopen')
+    def test_given_valid_data_when_get_pretax_for_aftertax_then_returns_valid_amount(self, mock_urlopen):
+        mock_urlopen.return_value = self.valid_mock_response
+        ft = taxes.FederalTaxes(cache_config=(1,))
+
+        # Using inverted values from test_given_valid_data_when_get_tax_amount_then_returns_valid_amount
+        self.assertEqual(ft.get_pretax_for_aftertax(30000-4500, year=2023), 30000)
+        self.assertEqual(ft.get_pretax_for_aftertax(60000-9365.25, year=2023), 60000)
+        self.assertEqual(ft.get_pretax_for_aftertax(90000-15515.25, year=2023), 90000)
+        self.assertEqual(ft.get_pretax_for_aftertax(130000-24995.82, year=2023), 130000)
+        self.assertEqual(ft.get_pretax_for_aftertax(330000-85705.92, year=2023), 330000)
+
+    @unittest.mock.patch('urllib.request.urlopen')
     def test_given_invalid_data_when_init_then_raises_value_error(self, mock_urlopen):
-        # Mock response object
-        mock_response = unittest.mock.MagicMock()
-        mock_response.read.return_value = b'some invalid json'
-        mock_response.__enter__.return_value = mock_response
-        mock_urlopen.return_value = mock_response
+        mock_urlopen.return_value = self.invalid_mock_response
 
         with self.assertRaises(ValueError):
             taxes.FederalTaxes(cache_config=(1,))

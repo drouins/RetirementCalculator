@@ -15,6 +15,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import abc
+import collections
 import json
 import os
 import urllib.request
@@ -34,6 +35,15 @@ class TaxCalculator(abc.ABC):
         def add_range(self, min_income, max_income, rate):
             self._ranges.append(((min_income, max_income), rate))
             self._ranges = sorted(self._ranges, key=lambda x: x[0][0])  # Always sorted by min income in range
+
+        def get_tax_amount(self, income):
+            tax_amount = 0
+            for income_range, rate in self._ranges:
+                income_in_range = min(income_range[1], income)
+                taxable_at_rate = max(0, income_in_range - income_range[0])
+                tax_amount_at_rate = rate * taxable_at_rate
+                tax_amount += tax_amount_at_rate
+            return round(tax_amount, 2)
 
     class TaxRangesEncoder(json.JSONEncoder):
         def default(self, obj):
@@ -79,6 +89,12 @@ class TaxCalculator(abc.ABC):
         if not self._rates:
             raise ValueError('Unable to get tax range data.')
 
+    @property
+    def last_year(self):
+        if not self._rates:
+            return None
+        return sorted(self._rates.keys())[-1]
+
     @abc.abstractmethod
     def parse_bracket_url(self, data):
         raise NotImplemented
@@ -102,7 +118,24 @@ class TaxCalculator(abc.ABC):
             print(loaded_data)
 
     def get_tax_amount(self, income, year=None):
-        raise NotImplemented
+        year = year or self.last_year
+        if year in self._rates:
+            rates = self._rates[year]
+        else:
+            raise NotImplemented
+        return rates.get_tax_amount(income)
 
     def get_pretax_for_aftertax(self, income, year=None):
-        raise NotImplemented
+        year = year or self.last_year
+        if year in self._rates:
+            rates = self._rates[year]
+        else:
+            raise NotImplemented
+        # Iteratively converge to the answer
+        pretax_income = collections.deque(maxlen=2)
+        pretax_income.extend([0, income])
+        while abs(pretax_income[-1] - pretax_income[-2]) > 0.01:
+            estimated_taxes = rates.get_tax_amount(pretax_income[-1])
+            pretax_income.append(income + estimated_taxes)
+
+        return pretax_income[-1]
