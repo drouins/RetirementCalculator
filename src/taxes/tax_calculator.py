@@ -143,7 +143,7 @@ class TaxCalculator(abc.ABC):
         rates = self.get_rates_for_year(year)
         return rates.get_tax_amount(income)
 
-    def get_pretax_for_aftertax(self, income, year=None):
+    def get_pretax_for_after_tax(self, income, year=None):
         rates = self.get_rates_for_year(year)
 
         # Iteratively converge to the answer

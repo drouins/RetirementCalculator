@@ -90,16 +90,16 @@ class TestFederalTaxes(unittest.TestCase):
         self.assertEqual(ft.get_tax_amount(330000, year=2023), 85705.92)
 
     @unittest.mock.patch('urllib.request.urlopen')
-    def test_given_valid_data_when_get_pretax_for_aftertax_then_returns_valid_amount(self, mock_urlopen):
+    def test_given_valid_data_when_get_pretax_for_after_tax_then_returns_valid_amount(self, mock_urlopen):
         mock_urlopen.return_value = self.valid_mock_response
         ft = taxes.FederalTaxes(cache_config=(1,))
 
         # Using inverted values from test_given_valid_data_when_get_tax_amount_then_returns_valid_amount
-        self.assertEqual(ft.get_pretax_for_aftertax(30000-4500, year=2023), 30000)
-        self.assertEqual(ft.get_pretax_for_aftertax(60000-9365.25, year=2023), 60000)
-        self.assertEqual(ft.get_pretax_for_aftertax(90000-15515.25, year=2023), 90000)
-        self.assertEqual(ft.get_pretax_for_aftertax(130000-24995.82, year=2023), 130000)
-        self.assertEqual(ft.get_pretax_for_aftertax(330000-85705.92, year=2023), 330000)
+        self.assertEqual(ft.get_pretax_for_after_tax(30000-4500, year=2023), 30000)
+        self.assertEqual(ft.get_pretax_for_after_tax(60000-9365.25, year=2023), 60000)
+        self.assertEqual(ft.get_pretax_for_after_tax(90000-15515.25, year=2023), 90000)
+        self.assertEqual(ft.get_pretax_for_after_tax(130000-24995.82, year=2023), 130000)
+        self.assertEqual(ft.get_pretax_for_after_tax(330000-85705.92, year=2023), 330000)
 
     @unittest.mock.patch('urllib.request.urlopen')
     def test_given_valid_data_when_get_tax_amount_then_returns_valid_amount_inflation_adjusted(self, mock_urlopen):

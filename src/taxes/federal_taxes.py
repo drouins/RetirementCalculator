@@ -18,6 +18,7 @@ import json
 import re
 
 from .tax_calculator import TaxCalculator
+from . import utils
 
 
 class FederalTaxes(TaxCalculator):
@@ -45,17 +46,12 @@ class FederalTaxes(TaxCalculator):
 
             tax_ranges = TaxCalculator.TaxRanges()
             for tax_rate, income_range in tax_data:
-                tax_rate = FederalTaxes._get_percentage(tax_rate)
+                tax_rate = utils.get_percentage(tax_rate)
                 income_range = FederalTaxes.extract_amounts(income_range)
                 tax_ranges.add_range(min_income=income_range[0],
                                      max_income=income_range[1],
                                      rate=tax_rate)
             self.add_tax_ranges(year=int(year), tax_ranges=tax_ranges)
-
-    @staticmethod
-    def _get_percentage(text):
-        percentage = re.findall(r'(\d+\.?\d+?%)', text)[0]
-        return float(percentage.replace(r'%', '')) / 100
 
     @staticmethod
     def extract_amounts(text):
