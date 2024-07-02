@@ -1,4 +1,3 @@
-#! /usr/local/bin/python3 -u
 #     Retirement Calculator, a canadian retirement simulator
 #     Copyright (C) 2024  Stephane Drouin
 #
@@ -15,23 +14,4 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import argparse
-
-import data
-import taxes
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', dest='input_directory', default='data', help='Input data directory.')
-    options = parser.parse_args()
-
-    simulation_configs = data.SimulationConfigs(input_directory=options.input_directory)
-    print(f'Simulating from {simulation_configs.first_year_of_simulation} until '
-          f'{simulation_configs.last_year_of_simulation}.')
-
-    #federal_taxes = taxes.FederalTaxes()
-
-
-if __name__ == '__main__':
-    main()
+from .simulation_configs import SimulationConfigs
