@@ -14,18 +14,20 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .configurable import Configurable
-from .assets import Assets
-from .indexed import Indexed
 from . import utils
 
 
-class RegisteredRetirementSavings(Assets, Indexed, Configurable):
+class Indexed:
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, config_filename=None, **kwargs)
+        super().__init__(*args, **kwargs)
+        if 'configs' in kwargs:
+            configs = kwargs.get('configs')
+            self._index_rate = utils.get_percentage(configs['indexRate'])
+            self._reference_year = configs['referenceYear']
+            self._reference_value = configs['value']
+        else:
+            raise ValueError("Missing 'configs' argument.")
 
-    def get_value_for_year(self, year):
-        return utils.as_cash_amount(self.get_indexed_value_for_year(year))
-
-    def get_minimum_withdrawal_for_year(self, year):
-        raise NotImplementedError('TODO')
+    def get_indexed_value_for_year(self, year):
+        years_in_future = year - self._reference_year
+        return self._reference_value * (1 + self._index_rate) ** years_in_future

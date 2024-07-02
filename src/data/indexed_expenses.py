@@ -16,17 +16,13 @@
 
 from .configurable import Configurable
 from .expenses import Expenses
+from .indexed import Indexed
 from . import utils
 
 
-class IndexedExpenses(Configurable, Expenses):
-    def __init__(self, configs=None):
-        super().__init__(config_filename=None, configs=configs)
-        self._index_rate = utils.get_percentage(self.configs['indexRate'])
-        self._reference_year = self.configs['referenceYear']
-        self._reference_value = self.configs['value']
+class IndexedExpenses(Expenses, Indexed, Configurable):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, config_filename=None, **kwargs)
 
     def get_expenses_for_year(self, year):
-        years_in_future = year - self._reference_year
-        year_value = self._reference_value * (1 + self._index_rate) ** years_in_future
-        return utils.as_cash_amount(year_value)
+        return utils.as_cash_amount(self.get_indexed_value_for_year(year))
