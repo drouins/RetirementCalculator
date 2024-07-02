@@ -3,5 +3,6 @@
   "birthday": "1950",
   "simulationStart": null,
   "retirementAge": 75,
-  "finalAge": 95
+  "finalAge": 95,
+  "moneySymbol": "$"
 }

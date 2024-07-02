@@ -26,9 +26,12 @@ def main():
     parser.add_argument('-i', dest='input_directory', default='data', help='Input data directory.')
     options = parser.parse_args()
 
+    expenses = data.ExpensesManager(input_directory=options.input_directory)
     simulation_configs = data.SimulationConfigs(input_directory=options.input_directory)
     print(f'Simulating from {simulation_configs.first_year_of_simulation} until '
           f'{simulation_configs.last_year_of_simulation}.')
+    for year in range(simulation_configs.first_year_of_simulation, simulation_configs.last_year_of_simulation):
+        print(f'{year}: Expenses={expenses.get_expenses_for_year(year)}{simulation_configs.money_symbol}')
 
     #federal_taxes = taxes.FederalTaxes()
 

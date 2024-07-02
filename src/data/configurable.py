@@ -14,10 +14,18 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import re
+import json
+import os
 
 
-def get_percentage(text):
-    # TODO: if more than one match, do something like raise or return them all?
-    percentage = re.findall(r'(\d+\.?\d?%)', text)[0]
-    return float(percentage.replace(r'%', '')) / 100
+class Configurable:
+    def __init__(self, config_filename, input_directory=None, configs=None):
+        if input_directory:
+            with open(os.path.join(input_directory, config_filename)) as file:
+                self._configs = json.load(file)
+        else:
+            self._configs = configs
+
+    @property
+    def configs(self):
+        return self._configs

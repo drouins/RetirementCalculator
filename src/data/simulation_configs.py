@@ -15,40 +15,40 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import datetime
-import json
-import os
+
+from .configurable import Configurable
 
 
-class SimulationConfigs:
+class SimulationConfigs(Configurable):
     def __init__(self, input_directory=None, configs=None):
-        if input_directory:
-            with open(os.path.join(input_directory, 'config.json')) as file:
-                self._configs = json.load(file)
-        else:
-            self._configs = configs
+        super().__init__(config_filename='config.json', input_directory=input_directory, configs=configs)
 
     @property
     def first_year_of_simulation(self):
-        if 'simulationStart' not in self._configs or not self._configs['simulationStart']:
+        if 'simulationStart' not in self.configs or not self.configs['simulationStart']:
             return datetime.datetime.now().year
-        return int(self._configs['simulationStart'])
+        return int(self.configs['simulationStart'])
 
     @property
     def birth_year(self):
-        if 'birthday' not in self._configs or not self._configs['birthday']:
+        if 'birthday' not in self.configs or not self.configs['birthday']:
             raise ValueError('No birthday provided.')
 
         # Check if the string is just a year
-        if isinstance(self._configs['birthday'], int):
-            return self._configs['birthday']
+        if isinstance(self.configs['birthday'], int):
+            return self.configs['birthday']
 
-        if len(self._configs['birthday']) == 4 and self._configs['birthday'].isdigit():
-            return int(self._configs['birthday'])
+        if len(self.configs['birthday']) == 4 and self.configs['birthday'].isdigit():
+            return int(self.configs['birthday'])
 
         # Try to parse the full date
-        date_obj = datetime.datetime.strptime(self._configs['birthday'], '%Y-%m-%d')
+        date_obj = datetime.datetime.strptime(self.configs['birthday'], '%Y-%m-%d')
         return date_obj.year
 
     @property
     def last_year_of_simulation(self):
-        return self.birth_year + self._configs['finalAge']
+        return self.birth_year + self.configs['finalAge']
+
+    @property
+    def money_symbol(self):
+        return self.configs['moneySymbol']

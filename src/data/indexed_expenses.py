@@ -14,10 +14,19 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import re
+from .configurable import Configurable
+from .expenses import Expenses
+from . import utils
 
 
-def get_percentage(text):
-    # TODO: if more than one match, do something like raise or return them all?
-    percentage = re.findall(r'(\d+\.?\d?%)', text)[0]
-    return float(percentage.replace(r'%', '')) / 100
+class IndexedExpenses(Configurable, Expenses):
+    def __init__(self, configs=None):
+        super().__init__(config_filename=None, configs=configs)
+        self._index_rate = utils.get_percentage(self.configs['indexRate'])
+        self._reference_year = self.configs['referenceYear']
+        self._reference_value = self.configs['value']
+
+    def get_expenses_for_year(self, year):
+        years_in_future = year - self._reference_year
+        year_value = self._reference_value * (1 + self._index_rate) ** years_in_future
+        return utils.as_cash_amount(year_value)
