@@ -17,12 +17,12 @@
 import json
 import os
 
-from .expenses import Expenses
-from .indexed_expenses import IndexedExpenses
+from .assets import Assets
+from .registered_retirement_savings import RegisteredRetirementSavings
 from . import utils
 
 
-class ExpensesManager(Expenses):
+class AssetManager(Assets):
     def __init__(self, input_directory, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -30,24 +30,27 @@ class ExpensesManager(Expenses):
             raise ValueError(f'{input_directory} is not a valid directory.')
 
         # List all files in the directory and filter files that match the pattern expenses_*.json
-        expenses_files = [f for f in os.listdir(input_directory) if f.startswith('expenses_') and f.endswith('.json')]
+        assets_files = [f for f in os.listdir(input_directory) if f.startswith('assets_') and f.endswith('.json')]
 
-        self._expenses = []
+        self._assets = []
 
-        for expenses_file in expenses_files:
-            with open(os.path.join(input_directory, expenses_file)) as file:
-                expenses_config = json.load(file)
+        for assets_file in assets_files:
+            with open(os.path.join(input_directory, assets_file)) as file:
+                assets_config = json.load(file)
 
                 # Dynamically instantiate the class using globals()
-                expenses_class_name = expenses_config['class']
-                if expenses_class_name not in globals():
-                    raise ValueError(f'Unknown class name name \'{expenses_class_name}\' specified in the config.')
+                assets_class_name = assets_config['class']
+                if assets_class_name not in globals():
+                    raise ValueError(f'Unknown class name name \'{assets_class_name}\' specified in the config.')
 
-                expenses_cls = globals()[expenses_class_name]
-                self._expenses.append(expenses_cls(configs=expenses_config))
+                assets_cls = globals()[assets_class_name]
+                self._assets.append(assets_cls(configs=assets_config))
 
-    def get_expenses_for_year(self, year):
-        if not self._expenses:
+    def get_value_for_year(self, year):
+        if not self._assets:
             return 0
+        return utils.as_cash_amount(sum([a.get_value_for_year(year) for a in self._assets]))
 
-        return utils.as_cash_amount(sum([e.get_expenses_for_year(year) for e in self._expenses]))
+    def get_minimum_withdrawal_for_year(self, year):
+        # TODO
+        return 0

@@ -1,0 +1,7 @@
+{
+  "name": "RRSP",
+  "class": "RegisteredRetirementSavings",
+  "value": 142142.42,
+  "referenceYear": 2023,
+  "indexRate": "3.5%"
+}

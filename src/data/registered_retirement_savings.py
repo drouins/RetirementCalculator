@@ -14,6 +14,22 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .asset_manager import AssetManager
-from .expenses_manager import ExpensesManager
-from .simulation_configs import SimulationConfigs
+from .configurable import Configurable
+from .assets import Assets
+from . import utils
+
+
+class RegisteredRetirementSavings(Configurable, Assets):
+    def __init__(self, configs=None):
+        super().__init__(config_filename=None, configs=configs)
+        self._index_rate = utils.get_percentage(self.configs['indexRate'])
+        self._reference_year = self.configs['referenceYear']
+        self._reference_value = self.configs['value']
+
+    def get_value_for_year(self, year):
+        years_in_future = year - self._reference_year
+        year_value = self._reference_value * (1 + self._index_rate) ** years_in_future
+        return utils.as_cash_amount(year_value)
+
+    def get_minimum_withdrawal_for_year(self, year):
+        raise NotImplementedError('TODO')

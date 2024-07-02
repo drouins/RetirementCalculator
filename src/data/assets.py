@@ -14,6 +14,17 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .asset_manager import AssetManager
-from .expenses_manager import ExpensesManager
-from .simulation_configs import SimulationConfigs
+import abc
+
+
+class Assets(abc.ABC):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @abc.abstractmethod
+    def get_value_for_year(self, year):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_minimum_withdrawal_for_year(self, year):
+        raise NotImplementedError
