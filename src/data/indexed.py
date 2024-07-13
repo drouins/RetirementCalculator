@@ -14,10 +14,20 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import re
+from . import utils
 
 
-def get_percentage(text):
-    # TODO: if more than one match, do something like raise or return them all?
-    percentage = re.findall(r'(\d+\.?\d?%)', text)[0]
-    return float(percentage.replace(r'%', '')) / 100
+class Indexed:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'configs' in kwargs:
+            configs = kwargs.get('configs')
+            self._index_rate = utils.get_percentage(configs['indexRate'])
+            self._reference_year = configs['referenceYear']
+            self._reference_value = configs['value']
+        else:
+            raise ValueError("Missing 'configs' argument.")
+
+    def get_indexed_value_for_year(self, year):
+        years_in_future = year - self._reference_year
+        return self._reference_value * (1 + self._index_rate) ** years_in_future

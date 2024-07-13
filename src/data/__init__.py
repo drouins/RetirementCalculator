@@ -14,10 +14,6 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import re
-
-
-def get_percentage(text):
-    # TODO: if more than one match, do something like raise or return them all?
-    percentage = re.findall(r'(\d+\.?\d?%)', text)[0]
-    return float(percentage.replace(r'%', '')) / 100
+from .asset_manager import AssetManager
+from .expenses_manager import ExpensesManager
+from .simulation_configs import SimulationConfigs

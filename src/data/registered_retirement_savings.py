@@ -14,10 +14,18 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import re
+from .configurable import Configurable
+from .assets import Assets
+from .indexed import Indexed
+from . import utils
 
 
-def get_percentage(text):
-    # TODO: if more than one match, do something like raise or return them all?
-    percentage = re.findall(r'(\d+\.?\d?%)', text)[0]
-    return float(percentage.replace(r'%', '')) / 100
+class RegisteredRetirementSavings(Assets, Indexed, Configurable):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, config_filename=None, **kwargs)
+
+    def get_value_for_year(self, year):
+        return utils.as_cash_amount(self.get_indexed_value_for_year(year))
+
+    def get_minimum_withdrawal_for_year(self, year):
+        raise NotImplementedError('TODO')

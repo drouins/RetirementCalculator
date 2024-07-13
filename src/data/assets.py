@@ -14,10 +14,17 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import re
+import abc
 
 
-def get_percentage(text):
-    # TODO: if more than one match, do something like raise or return them all?
-    percentage = re.findall(r'(\d+\.?\d?%)', text)[0]
-    return float(percentage.replace(r'%', '')) / 100
+class Assets(abc.ABC):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @abc.abstractmethod
+    def get_value_for_year(self, year):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_minimum_withdrawal_for_year(self, year):
+        raise NotImplementedError
