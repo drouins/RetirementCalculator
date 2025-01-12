@@ -16,6 +16,15 @@ for a specific year, and calculations will make sure to index these brackets thr
 Of course actual amounts will differ as taxes is a most complicated subject. In any
 case, we will at least try to ballpark the amounts in the simulations.
 
+## Executing the server
+
+```bash
+cd RCalculator
+python manage.py runserver
+```
+
+Open your browser and visit http://127.0.0.1:8000 to load the application.
+
 ## Executing `unit tests`
 
 From the root of the project:

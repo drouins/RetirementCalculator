@@ -4,6 +4,7 @@ __pycache__/
 cache/
 *.py[cod]
 *$py.class
+*.icloud
 
 # C extensions
 *.so

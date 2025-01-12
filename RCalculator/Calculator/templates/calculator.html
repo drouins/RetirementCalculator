@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement Calculator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .slider-container {
+            margin: 15px 0;
+        }
+        .slider-label {
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+
+<body>
+    <h1>Welcome to the Retirement Calculator</h1>
+    <div id="parameters">
+        <table id="parameter-table" border="1">
+            <tbody>
+                <tr>
+                    <td>Your birth date</td>
+                    <td><input type="text" id="birth-date" placeholder="Pick your birth date" /></td>
+                </tr>
+                <tr>
+                    <td>Assumed general inflation (%)</td>
+                    <td>
+                        <div class="slider-container">
+                            <input type="range" id="inflation-rate" min="0" max="10" step="0.1" value="2.0">
+                            <span id="inflation-rate-value">2.0%</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Simulation parameters</td>
+                    <td>
+                        <button id="download-json">Download</button>
+                        <br><br><input type="file" id="upload-json" accept="application/json" />
+                        <button id="upload-json-button">Upload</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="results">
+        <table id="calc-table" border="1">
+            <thead>
+                <tr>
+                    <!-- Headers will be filled dynamically -->
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be filled dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const birthDateInput = document.getElementById('birth-date');
+            const inflationRateSlider = document.getElementById('inflation-rate');
+            const sliderValueDisplay = document.getElementById('inflation-rate-value');
+            const downloadJsonButton = document.getElementById('download-json');
+            const uploadJsonButton = document.getElementById('upload-json');
+            const uploadJsonTrigger = document.getElementById('upload-json-button');
+
+            // Initialize Flatpickr
+            flatpickr(birthDateInput, {
+                altInput: true,
+                altFormat: "F j, Y",
+                dateFormat: "Y-m-d",
+                onChange: function () {
+                    updateTable();
+                },
+            });
+
+            // Update the slider value display dynamically
+            inflationRateSlider.addEventListener('input', function () {
+                sliderValueDisplay.textContent = `${this.value}%`;
+                updateTable();
+            });
+
+            // Listen for changes to the birth date input
+            birthDateInput.addEventListener('change', function () {
+                updateTable();
+            });
+
+            /**
+             * Helper function to package data into a JSON payload.
+             * @returns {Object} JSON payload containing birth_date and inflation_rate.
+             */
+            function getPayload() {
+                const birthDate = birthDateInput.value; // Read the value directly
+                const inflationRate = inflationRateSlider.value;
+
+                if (!birthDate) {
+                    console.error("Birth date is required.");
+                    alert("Please select a birth date.");
+                    return null;
+                }
+                return { birth_date: birthDate, inflation_rate: inflationRate };
+            }
+
+            /**
+             * Function to update form fields based on a JSON file.
+             * @param {Object} data Parsed JSON data from the uploaded file.
+             */
+            function setFormFieldsFromJson(data) {
+                if (data.birth_date) {
+                    birthDateInput.value = data.birth_date;
+                    const flatpickrInstance = birthDateInput._flatpickr;
+                    if (flatpickrInstance) flatpickrInstance.setDate(data.birth_date);
+                }
+
+                if (data.inflation_rate !== undefined) {
+                    inflationRateSlider.value = data.inflation_rate;
+                    sliderValueDisplay.textContent = `${data.inflation_rate}%`;
+                }
+            }
+
+            /**
+             * Function to handle JSON upload.
+             */
+            uploadJsonTrigger.addEventListener('click', function () {
+                const file = uploadJsonButton.files[0];
+                if (!file) {
+                    alert('Please select a file before uploading.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    try {
+                        const jsonData = JSON.parse(event.target.result);
+                        setFormFieldsFromJson(jsonData);
+                        updateTable();
+                    } catch (error) {
+                        console.error('Error parsing JSON:', error);
+                        alert('Invalid JSON file.');
+                    }
+                };
+                reader.readAsText(file);
+            });
+
+            // Download JSON file on button click
+            downloadJsonButton.addEventListener('click', function () {
+                const payload = getPayload();
+                if (!payload) return; // Do nothing if the payload is invalid
+
+                // Make a request to the new endpoint
+                fetch('/generate_json/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.blob(); // Get response as a Blob
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'simulationData.json'; // Suggested file name
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            // Function to send birth date and inflation rate to the backend and update the table
+            function updateTable() {
+                const payload = getPayload();
+                if (!payload) return; // Do nothing if the payload is invalid
+
+                fetch('/generate_table/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const headers = data.headers;
+                    const fieldNames = data.fields;
+                    const rows = data.rows;
+                    const tableData = data.data;
+
+                    // Update the table header
+                    const tableHead = document.querySelector("#calc-table thead tr");
+                    tableHead.innerHTML = ''; // Clear any existing headers
+                    headers.forEach(header => {
+                        const th = document.createElement('th');
+                        th.textContent = header;
+                        tableHead.appendChild(th);
+                    });
+
+                    // Update the table with the calculated data
+                    const tableBody = document.querySelector("#calc-table tbody");
+                    tableBody.innerHTML = "";  // Clear the table
+                    rows.forEach(row => {
+                        const newRow = document.createElement("tr");
+                        // For each row, create a cell for each field dynamically
+                        fieldNames.forEach(field => {
+                            const td = document.createElement('td');
+                            td.textContent = row[field];  // Get the value for each field dynamically
+                            newRow.appendChild(td);
+                        });
+                        // Append the row to the table body
+                        tableBody.appendChild(newRow);
+                    });
+                })
+                .catch(error => console.error('Error:', error));;
+            }
+        });
+    </script>
+</body>
+</html>
